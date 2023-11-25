@@ -1,0 +1,11 @@
+sudo: required
+services:
+  - docker
+before_install:
+# first line is copied from the travis enc run inside the ruby container to encrypt the service account creds
+# this line unenc the key to allow traivs to access GCP CLI and do the CI/CD (sa creds)
+  - openssl aes-256-cbc -K $encrypted_9f3b5599b056_key -iv $encrypted_9f3b5599b056_iv -in service-account.json.enc -out service-account.json -d
+  - curl https://sdk.cloud.google.com | bash > dev/null;
+  - source $HOME/google-cloud-sdk/path.bash.inc  # do some bash config in the container
+  - gcloud components update kubectl # GCP CLI update kubectl utility so we can interact with k8s cluster
+  - gcloud auth activate-service-account --key-file service-account.json # service account has the configured roles to allow Travus CI access to our gcloud sdk
