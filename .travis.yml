@@ -6,7 +6,7 @@ env:
   global:
     - SHA=$(git rev-parse HEAD)  # SHA of the latest git commit to tag new images for deployment
     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
-    - CLOUDSDK_PYTHON=python3/8  # specigy Python version and the dist to support it (GCP no longer supports 3.7)
+    - CLOUDSDK_PYTHON=python3.8 # specigy Python version and the dist to support it (GCP no longer supports 3.7)
 before_install:
 # first line is copied from the travis enc run inside the ruby container to encrypt the service account creds
 # this line unenc the key to allow traivs to access GCP CLI and do the CI/CD (sa creds)
