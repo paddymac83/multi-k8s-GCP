@@ -1,6 +1,10 @@
 sudo: required
 services:
   - docker
+env:
+  global:
+    - SHA=$(git rev-parse HEAD)  # SHA of the latest git commit to tag new images for deployment
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
 before_install:
 # first line is copied from the travis enc run inside the ruby container to encrypt the service account creds
 # this line unenc the key to allow traivs to access GCP CLI and do the CI/CD (sa creds)
@@ -9,3 +13,18 @@ before_install:
   - source $HOME/google-cloud-sdk/path.bash.inc  # do some bash config in the container
   - gcloud components update kubectl # GCP CLI update kubectl utility so we can interact with k8s cluster
   - gcloud auth activate-service-account --key-file service-account.json # service account has the configured roles to allow Travus CI access to our gcloud sdk
+  - gcloud config set project multi-k8s-404222
+  - gcloud config set compute/zone europe-west2-a
+  - gcloud container clusters get-credentials multi-cluster 
+  # steps above set the GCP project, compute/zone and the cluster that the CLI and Kubectl will interatc with from Travius
+  - echo "$DOCKER_PASSWORD" | DOCKER login -u "$DOCKER_USERNAME" --password-stdin
+  - docker build -t paddymac83/react-test -f ./client/Dockerfile.dev ./client
+script:
+  - docker run -e CI=true paddymac83/react-test npm test
+  # all of the above is a CI build that sets up SA/SDK/kubectl auth, builds a dev container for code test, then...
+  # its a CI pipeline! If tests pass we move onto Deployment
+deploy:
+  provider: script # Travsi des ot have a k8s provider so we have to use  a script to buiild images, docker hub, config, deploy
+  script: bash ./deploy.sh
+  on:
+    branch: master # CI on branch, merge, CD on master
